@@ -145,6 +145,65 @@ public class UnitTest1
         Assert.Contains("R0", formattedBoard);
     }
 
+    [Fact]
+    public void GeneratePlan_SupportsFlushWithoutBoardMismatch()
+    {
+        var planner = new Planner(featureRegistry: BuildRegistry());
+        var input = new MathInput
+        {
+            Seed = 222,
+            TotalBaseSpins = 4,
+            TargetCollection = new Dictionary<string, int>
+            {
+                ["DIAMOND"] = 6,
+                ["GOLD"] = 5,
+                ["RUBY"] = 3,
+            },
+            RequiredFeatures = new Dictionary<string, int>
+            {
+                [FeatureIds.Flush] = 1,
+            },
+        };
+
+        var plan = planner.GeneratePlan(input);
+        var execution = GameEngine.Execute(plan);
+
+        Assert.Equal(6, execution.Totals[1]);
+        Assert.Equal(5, execution.Totals[2]);
+        Assert.Equal(3, execution.Totals[3]);
+    }
+
+    [Fact]
+    public void GeneratePlan_StaysVerifiedAcrossSeedSweep()
+    {
+        for (var seed = 1; seed <= 100; seed++)
+        {
+            var planner = new Planner();
+            var input = new MathInput
+            {
+                Seed = seed,
+                TotalBaseSpins = 6,
+                TargetCollection = new Dictionary<string, int>
+                {
+                    ["DIAMOND"] = 8,
+                    ["GOLD"] = 7,
+                    ["RUBY"] = 5,
+                },
+                PrizeUpgradeMap = new Dictionary<string, string>
+                {
+                    ["SEVEN"] = "DIAMOND",
+                },
+            };
+
+            var plan = planner.GeneratePlan(input);
+            var execution = GameEngine.Execute(plan);
+
+            Assert.Equal(8, execution.Totals[1]);
+            Assert.Equal(7, execution.Totals[2]);
+            Assert.Equal(5, execution.Totals[3]);
+        }
+    }
+
     private static IReadOnlyDictionary<string, FeaturePlacementConfig> BuildRegistry()
     {
         return new Dictionary<string, FeaturePlacementConfig>(StringComparer.OrdinalIgnoreCase)

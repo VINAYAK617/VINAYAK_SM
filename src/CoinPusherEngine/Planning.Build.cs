@@ -452,7 +452,7 @@ public sealed partial class Planner
                 }
             }
 
-            PlaceTokens(current, planLog);
+            PlaceTokens(current, symbols, planLog);
         }
     }
 
@@ -464,11 +464,13 @@ public sealed partial class Planner
         return BoardUtils.RotateClockwise(board);
     }
 
-    private void PlaceTokens(SpinPlan spinPlan, List<string> planLog)
+    private void PlaceTokens(SpinPlan spinPlan, SymbolContext symbols, List<string> planLog)
     {
+        var usedSlots = new HashSet<BoardPosition>();
+
         foreach (var featureSpawn in spinPlan.FeatureSpawns)
         {
-            var slot = FindSlot(spinPlan.PlannedSpawns, featureSpawn.PreferredColumn);
+            var slot = FindSlot(spinPlan.PlannedSpawns, featureSpawn.PreferredColumn, symbols, usedSlots);
             if (slot is null)
             {
                 planLog.Add($"WARNING: no spawn slot for {featureSpawn.FeatureId} Spin {spinPlan.SpinNumber}");
@@ -480,6 +482,7 @@ public sealed partial class Planner
             featureSpawn.ConvertToId = displaced.SymId;
             featureSpawn.Row = position.Row;
             featureSpawn.Col = position.Col;
+            usedSlots.Add(position);
             spinPlan.PlannedSpawns[position] = CellState.Feature(
                 featureSpawn.SymId,
                 featureSpawn.FeatureId,
@@ -490,26 +493,70 @@ public sealed partial class Planner
         }
     }
 
-    private static BoardPosition? FindSlot(Dictionary<BoardPosition, CellState> spawns, int preferredColumn)
+    private static BoardPosition? FindSlot(
+        Dictionary<BoardPosition, CellState> spawns,
+        int preferredColumn,
+        SymbolContext symbols,
+        IReadOnlySet<BoardPosition> usedSlots)
     {
-        var preferred = new BoardPosition(preferredColumn, C.Cols - 1);
-        if (spawns.ContainsKey(preferred))
+        var fillerCandidates = spawns
+            .Where(kvp => !usedSlots.Contains(kvp.Key) && !kvp.Value.IsFeature && !IsWinLikeCell(kvp.Value, symbols))
+            .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+
+        if (TryPickPreferredSlot(fillerCandidates.Keys, preferredColumn, out var fillerSlot))
         {
-            return preferred;
+            return fillerSlot;
         }
 
-        var rowMatch = spawns.Keys
+        var fallbackCandidates = spawns.Keys
+            .Where(key => !usedSlots.Contains(key) && !spawns[key].IsFeature);
+        if (TryPickPreferredSlot(fallbackCandidates, preferredColumn, out var fallbackSlot))
+        {
+            return fallbackSlot;
+        }
+
+        return null;
+    }
+
+    private static bool TryPickPreferredSlot(
+        IEnumerable<BoardPosition> candidates,
+        int preferredColumn,
+        out BoardPosition slot)
+    {
+        var candidateList = candidates.ToList();
+        var preferred = new BoardPosition(preferredColumn, C.Cols - 1);
+        if (candidateList.Contains(preferred))
+        {
+            slot = preferred;
+            return true;
+        }
+
+        var rowMatch = candidateList
             .Where(pos => pos.Row == preferredColumn)
             .OrderByDescending(pos => pos.Col)
             .FirstOrDefault();
-        if (spawns.ContainsKey(rowMatch))
+        if (candidateList.Contains(rowMatch))
         {
-            return rowMatch;
+            slot = rowMatch;
+            return true;
         }
 
-        return spawns.Keys
+        var highestColumn = candidateList
             .OrderByDescending(pos => pos.Col)
             .ThenBy(pos => pos.Row)
             .FirstOrDefault();
+        if (candidateList.Contains(highestColumn))
+        {
+            slot = highestColumn;
+            return true;
+        }
+
+        slot = default;
+        return false;
+    }
+
+    private static bool IsWinLikeCell(CellState cell, SymbolContext symbols)
+    {
+        return !cell.IsFeature && !symbols.FillerSymIds.Contains(cell.SymId);
     }
 }
