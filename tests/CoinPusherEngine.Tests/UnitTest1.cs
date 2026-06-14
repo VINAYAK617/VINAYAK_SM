@@ -119,6 +119,32 @@ public class UnitTest1
         Assert.Equal(4, execution.Totals[3]);
     }
 
+    [Fact]
+    public void ExecuteWithTrace_CapturesSpinStagesAndReadableBoard()
+    {
+        var planner = new Planner(featureRegistry: BuildRegistry());
+        var symbolTable = new SymbolTable();
+        var input = new MathInput
+        {
+            Seed = 321,
+            TotalBaseSpins = 3,
+            TargetCollection = new Dictionary<string, int>
+            {
+                ["DIAMOND"] = 4,
+                ["GOLD"] = 3,
+            },
+        };
+
+        var plan = planner.GeneratePlan(input);
+        var trace = GameEngine.ExecuteWithTrace(plan);
+        var formattedBoard = BoardFormatter.FormatBoard(plan.SpinPlans[0].BoardAtStart, symbolTable);
+
+        Assert.Equal(plan.TotalSpins, trace.SpinTraces.Count);
+        Assert.Equal(plan.TotalSpins, trace.Result.BoardHistory.Count);
+        Assert.Contains("C0", formattedBoard);
+        Assert.Contains("R0", formattedBoard);
+    }
+
     private static IReadOnlyDictionary<string, FeaturePlacementConfig> BuildRegistry()
     {
         return new Dictionary<string, FeaturePlacementConfig>(StringComparer.OrdinalIgnoreCase)

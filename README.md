@@ -5,6 +5,7 @@ Predetermined-outcome coin-pusher engine implemented in C# from the provided des
 ## Projects
 
 - `src/CoinPusherEngine` - engine library
+- `src/CoinPusherEngine.Console` - runnable console demo with step-by-step board logs
 - `tests/CoinPusherEngine.Tests` - focused verification tests
 
 ## Implemented pieces
@@ -54,3 +55,16 @@ string ticketJson = TicketSerializer.Serialize(plan);
 ```bash
 dotnet test CoinPusherEngine.sln
 ```
+
+## Run the console demo
+
+```bash
+dotnet run --project src/CoinPusherEngine.Console/CoinPusherEngine.Console.csproj
+```
+
+The console runner prints:
+- starting board
+- pushers and planned spawns per spin
+- board after each runtime phase
+- running totals
+- final ticket JSON preview

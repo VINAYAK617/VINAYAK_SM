@@ -4,27 +4,58 @@ public static class GameEngine
 {
     public static ExecutionResult Execute(GameMasterPlan plan)
     {
+        return ExecuteWithTrace(plan).Result;
+    }
+
+    public static ExecutionTraceResult ExecuteWithTrace(GameMasterPlan plan)
+    {
         var totals = new Dictionary<int, int>();
         var boardHistory = new List<CellState?[,]>();
+        var traces = new List<SpinExecutionTrace>();
         var board = BoardUtils.CloneBoard(plan.SpinPlans[0].BoardAtStart);
 
         for (var index = 0; index < plan.SpinPlans.Count; index++)
         {
             var spin = plan.SpinPlans[index];
             var nextSpin = index + 1 < plan.SpinPlans.Count ? plan.SpinPlans[index + 1] : null;
+            var boardAtStart = BoardUtils.CloneBoard(board);
 
             FlattenStaleBoardFeatures(board);
+            var boardAfterFlatten = BoardUtils.CloneBoard(board);
             ExecutePushers(board, spin.Pushers, plan.PrizeUpgradeMap, totals);
-            board = BoardUtils.RotateClockwise(board);
+            var boardAfterPush = BoardUtils.CloneBoard(board);
+            board = RotateBoard(board);
+            var boardAfterRotate = BoardUtils.CloneBoard(board);
             ApplySpawns(board, spin.PlannedSpawns);
-            FireBoardFeatures(board, spin, nextSpin, plan.FillerSymIds.First(), plan.PrizeUpgradeMap, totals);
-            boardHistory.Add(BoardUtils.CloneBoard(board));
+            var boardAfterSpawns = BoardUtils.CloneBoard(board);
+            FireBoardFeatures(board, spin, nextSpin, plan.FillerSymIds.First());
+            var boardAfterFeatures = BoardUtils.CloneBoard(board);
+            boardHistory.Add(boardAfterFeatures);
+            traces.Add(new SpinExecutionTrace
+            {
+                SpinNumber = spin.SpinNumber,
+                IsExtraSpin = spin.IsExtraSpin,
+                ParentTurnIndex = spin.ParentTurnIndex,
+                BoardAtStart = boardAtStart,
+                BoardAfterFlatten = boardAfterFlatten,
+                BoardAfterPush = boardAfterPush,
+                BoardAfterRotate = boardAfterRotate,
+                BoardAfterSpawns = boardAfterSpawns,
+                BoardAfterFeatures = boardAfterFeatures,
+                TotalsAfterSpin = new Dictionary<int, int>(totals),
+            });
         }
 
-        return new ExecutionResult
+        var result = new ExecutionResult
         {
             Totals = totals,
             BoardHistory = boardHistory,
+        };
+
+        return new ExecutionTraceResult
+        {
+            Result = result,
+            SpinTraces = traces,
         };
     }
 
@@ -77,7 +108,12 @@ public static class GameEngine
         }
     }
 
-    private static void ApplySpawns(CellState?[,] board, Dictionary<BoardPosition, CellState> spawns)
+    public static CellState?[,] RotateBoard(CellState?[,] board)
+    {
+        return BoardUtils.RotateClockwise(board);
+    }
+
+    private static void ApplySpawns(CellState?[,] board, IReadOnlyDictionary<BoardPosition, CellState> spawns)
     {
         foreach (var (position, cell) in spawns)
         {
@@ -89,9 +125,7 @@ public static class GameEngine
         CellState?[,] board,
         SpinPlan spin,
         SpinPlan? nextSpin,
-        int fillerFallback,
-        IReadOnlyDictionary<int, int> upgradeMap,
-        Dictionary<int, int> totals)
+        int fillerFallback)
     {
         var featurePositions = BoardUtils.EnumeratePositions()
             .Where(pos => board[pos.Row, pos.Col]?.IsFeature == true)
@@ -200,7 +234,8 @@ public static class Verifier
 {
     public static void VerifyPlan(GameMasterPlan plan, SymbolTable symbolTable, List<string>? planLog = null)
     {
-        var result = GameEngine.Execute(plan);
+        var traceResult = GameEngine.ExecuteWithTrace(plan);
+        var result = traceResult.Result;
 
         for (var index = 0; index < plan.SpinPlans.Count - 1; index++)
         {

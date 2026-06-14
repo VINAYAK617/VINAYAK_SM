@@ -11,6 +11,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{F89C0882
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CoinPusherEngine.Tests", "tests\CoinPusherEngine.Tests\CoinPusherEngine.Tests.csproj", "{3E4325E4-AEC9-4753-AC56-0D715E7428CD}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CoinPusherEngine.Console", "src\CoinPusherEngine.Console\CoinPusherEngine.Console.csproj", "{5E5601F0-18D7-4329-9CB9-D47B1DEACB19}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -28,9 +30,14 @@ Global
 		{3E4325E4-AEC9-4753-AC56-0D715E7428CD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3E4325E4-AEC9-4753-AC56-0D715E7428CD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3E4325E4-AEC9-4753-AC56-0D715E7428CD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5E5601F0-18D7-4329-9CB9-D47B1DEACB19}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5E5601F0-18D7-4329-9CB9-D47B1DEACB19}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5E5601F0-18D7-4329-9CB9-D47B1DEACB19}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5E5601F0-18D7-4329-9CB9-D47B1DEACB19}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{714DAAF5-73FA-49BE-81C9-0FD720740A70} = {F57BD4C3-9A48-4B76-ABF8-DE7F3E305A8D}
 		{3E4325E4-AEC9-4753-AC56-0D715E7428CD} = {F89C0882-50F9-45F0-84F8-14ABFD8AFF60}
+		{5E5601F0-18D7-4329-9CB9-D47B1DEACB19} = {F57BD4C3-9A48-4B76-ABF8-DE7F3E305A8D}
 	EndGlobalSection
 EndGlobal

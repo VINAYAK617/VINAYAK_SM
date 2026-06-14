@@ -242,3 +242,23 @@ public sealed class ExecutionResult
     public required IReadOnlyDictionary<int, int> Totals { get; init; }
     public required List<CellState?[,]> BoardHistory { get; init; }
 }
+
+public sealed class SpinExecutionTrace
+{
+    public required int SpinNumber { get; init; }
+    public required bool IsExtraSpin { get; init; }
+    public int? ParentTurnIndex { get; init; }
+    public required CellState?[,] BoardAtStart { get; init; }
+    public required CellState?[,] BoardAfterFlatten { get; init; }
+    public required CellState?[,] BoardAfterPush { get; init; }
+    public required CellState?[,] BoardAfterRotate { get; init; }
+    public required CellState?[,] BoardAfterSpawns { get; init; }
+    public required CellState?[,] BoardAfterFeatures { get; init; }
+    public required IReadOnlyDictionary<int, int> TotalsAfterSpin { get; init; }
+}
+
+public sealed class ExecutionTraceResult
+{
+    public required ExecutionResult Result { get; init; }
+    public required IReadOnlyList<SpinExecutionTrace> SpinTraces { get; init; }
+}
